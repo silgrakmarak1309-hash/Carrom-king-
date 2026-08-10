@@ -17,20 +17,38 @@ export function updatePhysicsFrame(pieces: Piece[], pockets: Pocket[]): StepResu
   const pocketedThisStep: Piece[] = [];
   let collisionsCount = 0;
 
+  const numPieces = pieces.length;
+  const numPockets = pockets.length;
+
   for (let sub = 0; sub < SUB_STEPS; sub++) {
-    // 1. Move pieces and check wall/pocket collisions
-    pieces.forEach((p) => {
-      if (p.isPocketed) return;
+    // 1. Move pieces and check wall / pocket collisions
+    for (let i = 0; i < numPieces; i++) {
+      const p = pieces[i];
+      if (p.isPocketed) continue;
 
-      // Position update
-      const dtVel = p.vel.div(SUB_STEPS);
-      p.pos = p.pos.add(dtVel);
+      // Friction decay per sub-step (pre-calculated exponent base)
+      const frictionSub = Math.pow(p.friction, 1 / SUB_STEPS);
 
-      // Friction decay per sub-step
-      p.vel = p.vel.mult(Math.pow(p.friction, 1 / SUB_STEPS));
-      if (p.vel.mag() < 0.04) {
-        p.vel.set(0, 0);
+      // Velocity & Position update
+      const vx = p.vel.x;
+      const vy = p.vel.y;
+
+      const dtVx = vx / SUB_STEPS;
+      const dtVy = vy / SUB_STEPS;
+
+      p.pos.x += dtVx;
+      p.pos.y += dtVy;
+
+      const newVx = vx * frictionSub;
+      const newVy = vy * frictionSub;
+
+      const speedSq = newVx * newVx + newVy * newVy;
+      if (speedSq < 0.0016) { // equivalent to mag < 0.04
+        p.vel.x = 0;
+        p.vel.y = 0;
       } else {
+        p.vel.x = newVx;
+        p.vel.y = newVy;
         isMoving = true;
       }
 
@@ -61,57 +79,88 @@ export function updatePhysicsFrame(pieces: Piece[], pockets: Pocket[]): StepResu
       }
 
       // Pocket Detection
-      pockets.forEach((h) => {
-        const dist = p.pos.dist(h.pos);
-        // Soft suction effect near pocket
-        if (dist < h.r + 5 && dist > 1) {
-          const pullDir = h.pos.sub(p.pos).norm();
-          p.vel = p.vel.add(pullDir.mult(0.15 / SUB_STEPS));
+      for (let k = 0; k < numPockets; k++) {
+        const h = pockets[k];
+        const dx = h.pos.x - p.pos.x;
+        const dy = h.pos.y - p.pos.y;
+        const distSq = dx * dx + dy * dy;
+
+        const maxSuctionDist = h.r + 5;
+        const maxSuctionDistSq = maxSuctionDist * maxSuctionDist;
+
+        if (distSq < maxSuctionDistSq && distSq > 1) {
+          const dist = Math.sqrt(distSq);
+          const pullFactor = 0.15 / (SUB_STEPS * dist);
+          p.vel.x += dx * pullFactor;
+          p.vel.y += dy * pullFactor;
         }
 
-        if (dist < h.r - 4) {
+        const pocketRadiusTrigger = h.r - 4;
+        if (distSq < pocketRadiusTrigger * pocketRadiusTrigger) {
           p.isPocketed = true;
-          p.vel.set(0, 0);
+          p.vel.x = 0;
+          p.vel.y = 0;
           pocketedThisStep.push(p);
           audio.playPocketSound();
+          break;
         }
-      });
-    });
+      }
+    }
 
     // 2. Piece to Piece Collisions
-    for (let i = 0; i < pieces.length; i++) {
-      for (let j = i + 1; j < pieces.length; j++) {
-        const p1 = pieces[i];
+    for (let i = 0; i < numPieces; i++) {
+      const p1 = pieces[i];
+      if (p1.isPocketed) continue;
+
+      for (let j = i + 1; j < numPieces; j++) {
         const p2 = pieces[j];
+        if (p2.isPocketed) continue;
 
-        if (p1.isPocketed || p2.isPocketed) continue;
-
-        const delta = p2.pos.sub(p1.pos);
-        const dist = delta.mag();
+        const dx = p2.pos.x - p1.pos.x;
+        const dy = p2.pos.y - p1.pos.y;
         const minDist = p1.radius + p2.radius;
 
-        if (dist < minDist && dist > 0.0001) {
-          collisionsCount++;
-          const normal = delta.norm();
+        // Fast bounding box pruning before distance check
+        if (Math.abs(dx) >= minDist || Math.abs(dy) >= minDist) continue;
 
-          // Separation displacement to prevent overlap/sticking
+        const distSq = dx * dx + dy * dy;
+        const minDistSq = minDist * minDist;
+
+        if (distSq < minDistSq && distSq > 0.000001) {
+          collisionsCount++;
+          const dist = Math.sqrt(distSq);
+
+          // Normal vector components
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          // Separation displacement
           const overlap = minDist - dist;
-          p1.pos = p1.pos.sub(normal.mult(overlap * 0.5));
-          p2.pos = p2.pos.add(normal.mult(overlap * 0.5));
+          const halfOverlap = overlap * 0.5;
+          p1.pos.x -= nx * halfOverlap;
+          p1.pos.y -= ny * halfOverlap;
+          p2.pos.x += nx * halfOverlap;
+          p2.pos.y += ny * halfOverlap;
 
           // Relative velocity
-          const vRel = p1.vel.sub(p2.vel);
-          const velAlongNormal = vRel.dot(normal);
+          const vrelX = p1.vel.x - p2.vel.x;
+          const vrelY = p1.vel.y - p2.vel.y;
 
-          // Only resolve if moving towards each other
+          // Velocity along normal
+          const velAlongNormal = vrelX * nx + vrelY * ny;
+
           if (velAlongNormal > 0) {
             const impulseMag = (-(1 + RESTITUTION_COIN) * velAlongNormal) / (1 / p1.mass + 1 / p2.mass);
-            const impulse = normal.mult(impulseMag);
+            const impX = nx * impulseMag;
+            const impY = ny * impulseMag;
 
-            p1.vel = p1.vel.add(impulse.div(p1.mass));
-            p2.vel = p2.vel.sub(impulse.div(p2.mass));
+            p1.vel.x += impX / p1.mass;
+            p1.vel.y += impY / p1.mass;
+            p2.vel.x -= impX / p2.mass;
+            p2.vel.y -= impY / p2.mass;
 
-            audio.playCollision(vRel.mag());
+            const vrelMag = Math.sqrt(vrelX * vrelX + vrelY * vrelY);
+            audio.playCollision(vrelMag);
           }
         }
       }
@@ -124,3 +173,4 @@ export function updatePhysicsFrame(pieces: Piece[], pockets: Pocket[]): StepResu
     collisionsCount
   };
 }
+
