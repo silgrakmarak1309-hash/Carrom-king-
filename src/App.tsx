@@ -259,6 +259,8 @@ export default function App() {
         ? 'vs Computer AI Match Started!'
         : selectedMode === 'puzzle'
         ? `${PUZZLE_LEVELS[puzzleIdx].title}`
+        : selectedMode === 'online'
+        ? 'Online PvP Match Connected!'
         : 'Free Practice Mode'
     );
   }, [showToast]);

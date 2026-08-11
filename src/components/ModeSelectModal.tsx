@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameMode } from '../types';
 import { PUZZLE_LEVELS } from '../utils/carromBoardSetup';
-import { Trophy, Bot, Puzzle, Target, X, Lock, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { Trophy, Bot, Puzzle, Target, X, Lock, CheckCircle2, ChevronLeft, Globe, Zap } from 'lucide-react';
 
 interface ModeSelectModalProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl text-slate-100 relative max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl text-slate-100 relative max-h-[90vh] flex flex-col">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg z-10"
@@ -97,96 +97,138 @@ export const ModeSelectModal: React.FC<ModeSelectModalProps> = ({
         ) : (
           <div>
             <h2 className="text-xl font-black text-amber-400 mb-1 tracking-tight text-center">SELECT GAME MODE</h2>
-            <p className="text-xs text-slate-400 text-center mb-5">Choose your preferred Carrom match mode</p>
+            <p className="text-xs text-slate-400 text-center mb-4">Choose your preferred Carrom match mode</p>
 
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => {
-                  onSelectMode('classic');
-                  onClose();
-                }}
-                className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all ${
-                  activeMode === 'classic'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                    : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-800 text-slate-200'
-                }`}
-              >
-                <div className="p-2.5 bg-amber-500/20 rounded-lg text-amber-400">
-                  <Trophy className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm">Classic Carrom</div>
-                  <div className="text-xs text-slate-400">2-Player Local Pass & Play match</div>
-                </div>
-              </button>
-
+            {/* 2x2 Grid for first 4 modes */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {/* Mode 1 */}
               <button
                 onClick={() => {
                   onSelectMode('vs_cpu');
                   onClose();
                 }}
-                className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all ${
                   activeMode === 'vs_cpu'
                     ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
                     : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-800 text-slate-200'
                 }`}
               >
-                <div className="p-2.5 bg-emerald-500/20 rounded-lg text-emerald-400">
-                  <Bot className="w-5 h-5" />
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 bg-emerald-500/20 rounded-lg text-emerald-400">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div className="font-black text-xs text-emerald-300">Mode 1</div>
                 </div>
-                <div>
-                  <div className="font-bold text-sm">vs Computer (AI)</div>
-                  <div className="text-xs text-slate-400">Play against smart AI bot</div>
-                </div>
+                <div className="font-bold text-sm">VS Computer</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Play against smart AI</div>
               </button>
 
+              {/* Mode 2 */}
+              <button
+                onClick={() => {
+                  onSelectMode('classic');
+                  onClose();
+                }}
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all ${
+                  activeMode === 'classic'
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                    : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-800 text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 bg-amber-500/20 rounded-lg text-amber-400">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="font-black text-xs text-amber-300">Mode 2</div>
+                </div>
+                <div className="font-bold text-sm">2 Players</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Pass & Play local match</div>
+              </button>
+
+              {/* Mode 3 */}
               <button
                 onClick={() => {
                   setView('puzzles');
                 }}
-                className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all ${
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all ${
                   activeMode === 'puzzle'
                     ? 'bg-purple-500/20 border-purple-500 text-purple-300'
                     : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-800 text-slate-200'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-purple-500/20 rounded-lg text-purple-400">
-                    <Puzzle className="w-5 h-5" />
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-purple-500/20 rounded-lg text-purple-400">
+                      <Puzzle className="w-4 h-4" />
+                    </div>
+                    <div className="font-black text-xs text-purple-300">Mode 3</div>
                   </div>
-                  <div>
-                    <div className="font-bold text-sm">Puzzle Challenge</div>
-                    <div className="text-xs text-slate-400">20 trick shots & tactical puzzles</div>
-                  </div>
+                  <span className="text-[9px] font-black bg-purple-950 px-1.5 py-0.5 rounded text-purple-300 border border-purple-800">
+                    {unlockedPuzzleLevel}/20
+                  </span>
                 </div>
-                <div className="px-2 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-extrabold">
-                  {unlockedPuzzleLevel}/20
-                </div>
+                <div className="font-bold text-sm">Puzzle Mode</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">20 trick shot levels</div>
               </button>
 
+              {/* Mode 4 */}
               <button
                 onClick={() => {
                   onSelectMode('practice');
                   onClose();
                 }}
-                className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all ${
                   activeMode === 'practice'
                     ? 'bg-blue-500/20 border-blue-500 text-blue-300'
                     : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-800 text-slate-200'
                 }`}
               >
-                <div className="p-2.5 bg-blue-500/20 rounded-lg text-blue-400">
-                  <Target className="w-5 h-5" />
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 bg-blue-500/20 rounded-lg text-blue-400">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <div className="font-black text-xs text-blue-300">Mode 4</div>
                 </div>
-                <div>
-                  <div className="font-bold text-sm">Free Practice</div>
-                  <div className="text-xs text-slate-400">Unlimited practice shots and warm-up</div>
-                </div>
+                <div className="font-bold text-sm">Free Practice</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Warm up & test shots</div>
               </button>
             </div>
+
+            {/* Mode 5: Full Width Online Multiplayer Card */}
+            <button
+              onClick={() => {
+                onSelectMode('online');
+                onClose();
+              }}
+              className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 text-left transition-all ${
+                activeMode === 'online'
+                  ? 'bg-indigo-900/40 border-indigo-500 text-indigo-200'
+                  : 'bg-slate-800/90 border-indigo-500/50 hover:border-indigo-400 text-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-500/20 rounded-lg text-indigo-400 shrink-0">
+                  <Globe className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-xs text-indigo-300">Mode 5</span>
+                    <span className="text-[9px] font-black bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800">
+                      Matchmaking
+                    </span>
+                  </div>
+                  <div className="font-extrabold text-sm text-indigo-200">Online Multiplayer</div>
+                  <div className="text-[10px] text-slate-400">Play online matches with global players</div>
+                </div>
+              </div>
+              <div className="p-2 bg-indigo-600 text-white rounded-lg">
+                <Zap className="w-4 h-4 fill-current" />
+              </div>
+            </button>
           </div>
         )}
       </div>
     </div>
   );
 };
+

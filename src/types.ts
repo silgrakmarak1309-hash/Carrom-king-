@@ -1,6 +1,6 @@
 export type CoinType = 'white' | 'black' | 'red' | 'striker';
 
-export type GameMode = 'classic' | 'vs_cpu' | 'puzzle' | 'practice';
+export type GameMode = 'classic' | 'vs_cpu' | 'puzzle' | 'practice' | 'online';
 
 export type TurnPlayer = 'player1' | 'player2';
 
